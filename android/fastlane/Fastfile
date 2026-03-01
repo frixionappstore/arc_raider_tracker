@@ -1,0 +1,16 @@
+default_platform(:android)
+
+platform :android do
+  desc "Uygulamayı derle ve release APK oluştur"
+  lane :build do
+    gradle(task: "assembleRelease")
+  end
+
+  desc "APK oluştur ve mağazalara gönder (API anahtarları eklendiğinde aktif olacak)"
+  lane :deploy do
+    build
+    # Buraya ileride Amazon, Samsung veya Huawei yükleme komutlarını ekleyeceğiz
+    # Örn: amazon_appstore_upload(api_key: "...")
+    puts "APK başarıyla oluşturuldu! Şimdi manuel olarak veya API ile yüklenebilir."
+  end
+end

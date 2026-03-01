@@ -1,0 +1,2 @@
+# json_key_file("") # Google Play kullanmadığımız için şimdilik boş
+package_name("com.lavinya.arc_raiders") # Paket adın
