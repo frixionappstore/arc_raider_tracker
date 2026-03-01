@@ -1,17 +1,23 @@
-# arc_raiders
+# 🛡️ ARC Raiders Tracker
 
-A new Flutter project.
+Speranza'daki mücadelesini organize et! Bu uygulama, Raiders topluluğu için özel olarak geliştirilmiş bir envanter ve ilerleme takip aracıdır.
 
-## Getting Started
+### 🚀 Öne Çıkan Özellikler
+*   **Envanter Takibi:** Tüm blueprint ve malzemelerini kolayca yönet.
+*   **Operasyon Hazırlığı:** Atölye ve Projeler için eksiklerini tek tıkla hesapla.
+*   **Akıllı Paylaşım:** İhtiyaç duyduğun malzemeleri arkadaşlarınla anında paylaş.
+*   **Gece/Gündüz Modu:** Speranza'nın atmosferine uygun dinamik tema desteği.
+*   **Tam Türkçe:** Oyun terminolojisine uygun %100 yerelleştirme.
 
-This project is a starting point for a Flutter application.
+### 📥 Nasıl İndirilir?
+En güncel sürümü (APK) GitHub sayfamızdaki **[Releases](https://github.com/frixionappstore/arc_raiders_tracker/releases)** bölümünden indirebilirsiniz.
 
-A few resources to get you started if this is your first Flutter project:
+### 🤝 Teşekkürler
+Bu projenin gelişiminde destek olan tüm Raider dostlarımıza sonsuz teşekkürler:
+*   **FriXioN**
+*   **Sosyoman**
+*   **DembeZumaTR**
+*   **Riddle**
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+---
+*Bu bir gayriresmi (unofficial) hayran yapımı projedir.*
