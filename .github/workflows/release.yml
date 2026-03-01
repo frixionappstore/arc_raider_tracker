@@ -37,7 +37,7 @@ jobs:
       - name: Build APK
         run: flutter build apk --release
 
-      - name: Create GitHub Release
+      - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.get_version.outputs.VERSION }}
