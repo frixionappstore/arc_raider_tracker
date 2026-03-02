@@ -44,7 +44,7 @@ class _MissionScreenState extends State<MissionScreen> {
         if (progressData != null) _missionProgress = Map<String, int>.from(json.decode(progressData));
         if (stageData != null) _missionStages = Map<String, int>.from(json.decode(stageData));
       });
-      _forceCheckAllStages();
+      _forceCheckAllStages(showPopup: false);
     }
   }
 
@@ -61,7 +61,7 @@ class _MissionScreenState extends State<MissionScreen> {
       int step = (req.type == RequirementType.coin) ? (delta.abs() >= 10 ? 100000 : 10000) : 1;
       _missionProgress[key] = (current + (delta.sign * step)).clamp(0, req.requiredAmount);
     });
-    _forceCheckAllStages();
+    _forceCheckAllStages(showPopup: true);
     _saveData();
   }
 
@@ -80,7 +80,7 @@ class _MissionScreenState extends State<MissionScreen> {
     _timer?.cancel();
   }
 
-  void _forceCheckAllStages() {
+  void _forceCheckAllStages({required bool showPopup}) {
     bool anyChanged = false;
     for (var mission in MissionData.allMissions) {
       if (mission.isLocked) continue;
@@ -99,12 +99,68 @@ class _MissionScreenState extends State<MissionScreen> {
         }
       }
 
-      if ((_missionStages[mission.name] ?? 0) != currentCompleted) {
+      int oldCompleted = _missionStages[mission.name] ?? 0;
+      if (oldCompleted != currentCompleted) {
         _missionStages[mission.name] = currentCompleted;
         anyChanged = true;
+
+        // EĞER SON AŞAMA YENİ TAMAMLANDIYSA POPUP GÖSTER
+        if (showPopup && currentCompleted == mission.stages.length && mission.stages.isNotEmpty) {
+          _showCompletionDialog(mission.name);
+        }
       }
     }
     if (anyChanged) setState(() {});
+  }
+
+  void _showCompletionDialog(String missionName) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A1A),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+          side: const BorderSide(color: Colors.orangeAccent, width: 2),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.auto_awesome, color: Colors.orangeAccent),
+            SizedBox(width: 10),
+            Text("OPERASYON TAMAM!", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              "$missionName için gerekli tüm aşamaları başarıyla tamamladın.",
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              "Şimdi sefere çıkmaya hazırsın Raiders!",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.orangeAccent, fontWeight: FontWeight.bold, fontSize: 16, fontStyle: FontStyle.italic),
+            ),
+          ],
+        ),
+        actions: [
+          Center(
+            child: ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orangeAccent,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text("ANLAŞILDI", style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _resetData() async {
@@ -306,7 +362,7 @@ class _MissionScreenState extends State<MissionScreen> {
             children: [
               _buildCountButton(Icons.remove, isActive ? () => _changeRequirementCount(req, mission.name, stage.name, -1) : null, isActive, isDark, onLongPressStart: isActive ? (details) => _startTimer(req, mission.name, stage.name, -1) : null, onLongPressEnd: isActive ? (details) => _stopTimer() : null),
               SizedBox(
-                width: req.type == RequirementType.coin ? 90 : 65, // Coin için genişlik ayarlandı
+                width: req.type == RequirementType.coin ? 90 : 65,
                 child: Center(
                   child: req.type == RequirementType.coin 
                     ? Column(
