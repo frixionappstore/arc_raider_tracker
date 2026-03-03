@@ -1,15 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:url_launcher/url_launcher.dart'; // URL açmak için gerekebilir, ama şimdilik manuel link vereceğiz
 
 class UpdaterService {
   // SENİN GITHUB REPO BİLGİLERİN
   static const String _repoUrl = "https://raw.githubusercontent.com/frixionappstore/arc_raiders_tracker/main/version.json";
-  static const String _downloadUrl = "https://github.com/frixionappstore/arc_raiders_tracker/releases/latest";
-
+  
   // MEVCUT VERSİYON (Bunu her güncellemede artırmalıyız)
-  static const double currentVersion = 1.04;
+  static const double currentVersion = 1.05;
 
   static Future<void> checkForUpdates(BuildContext context) async {
     try {
@@ -67,11 +65,9 @@ class UpdaterService {
           ),
           ElevatedButton(
             onPressed: () {
-              // URL'yi tarayıcıda açmak için sistem (Gerçek linke gider)
-              // Şimdilik linki gösteriyoruz
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("İndirme sayfası tarayıcıda açılıyor...")),
+                const SnackBar(content: Text("Lütfen GitHub Releases sayfasından en son sürümü indirin.")),
               );
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent, foregroundColor: Colors.black),

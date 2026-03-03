@@ -36,6 +36,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await prefs.setBool('isDarkMode', val);
   }
 
+  // --- KRİTİK VERİ TAŞIMA MOTORU ---
   Future<void> _updateUserName() async {
     final newName = _nameController.text.trim();
     if (newName.isEmpty || newName == widget.userName) return;
@@ -43,15 +44,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     List<String> users = prefs.getStringList('saved_raiders') ?? [];
 
+    // Yeni isim zaten varsa engelle
+    if (users.contains(newName)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Bu isim zaten kullanılıyor!")),
+        );
+      }
+      return;
+    }
+
+    // 1. ESKİ VERİLERİ ÇEK
+    final oldProgress = prefs.getString('mission_progress_${widget.userName}');
+    final oldStages = prefs.getString('mission_stages_${widget.userName}');
+    final oldBenchStocks = prefs.getString('bench_stocks_${widget.userName}');
+    final oldBenchLevels = prefs.getString('bench_levels_${widget.userName}');
+    final oldInventory = prefs.getString('user_inventory_${widget.userName}');
+
+    // 2. YENİ İSİME AKTAR
+    if (oldProgress != null) await prefs.setString('mission_progress_$newName', oldProgress);
+    if (oldStages != null) await prefs.setString('mission_stages_$newName', oldStages);
+    if (oldBenchStocks != null) await prefs.setString('bench_stocks_$newName', oldBenchStocks);
+    if (oldBenchLevels != null) await prefs.setString('bench_levels_$newName', oldBenchLevels);
+    if (oldInventory != null) await prefs.setString('user_inventory_$newName', oldInventory);
+
+    // 3. KULLANICI LİSTESİNİ GÜNCELLE
     int index = users.indexOf(widget.userName);
     if (index != -1) {
       users[index] = newName;
       await prefs.setStringList('saved_raiders', users);
       await prefs.setString('active_user', newName);
 
+      // 4. ESKİ ÇÖPLERİ TEMİZLE
+      await prefs.remove('mission_progress_${widget.userName}');
+      await prefs.remove('mission_stages_${widget.userName}');
+      await prefs.remove('bench_stocks_${widget.userName}');
+      await prefs.remove('bench_levels_${widget.userName}');
+      await prefs.remove('user_inventory_${widget.userName}');
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Raider ismi güncellendi. Başlangıç ekranına dönülüyor.")),
+          const SnackBar(content: Text("Verileriniz yeni isminize başarıyla aktarıldı!")),
         );
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const UserSelectionScreen()),
@@ -127,7 +160,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 20),
                 Center(
                   child: Text(
-                    "Versiyon 1.0.3",
+                    "Versiyon 1.0.5",
                     style: TextStyle(color: isDark ? Colors.white24 : Colors.black26, fontSize: 12),
                   ),
                 ),
