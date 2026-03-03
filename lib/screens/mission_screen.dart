@@ -75,6 +75,23 @@ class _MissionScreenState extends State<MissionScreen> {
     _saveData();
   }
 
+  // --- HIZLI TAMAMLAMA MOTORU ---
+  void _quickCompleteMission(Mission mission) {
+    setState(() {
+      for (var stage in mission.stages) {
+        for (var req in stage.requirements) {
+          final key = "${mission.name}_${stage.name}_${req.id}";
+          _missionProgress[key] = req.requiredAmount;
+        }
+      }
+      _missionStages[mission.name] = mission.stages.length;
+    });
+    _saveData();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(backgroundColor: Colors.green, content: Text("${mission.name} başarıyla tamamlandı! 🛡️")),
+    );
+  }
+
   void _startTimer(MissionRequirement req, String missionName, String stageName, int stageNumber, int delta) {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
@@ -154,7 +171,6 @@ class _MissionScreenState extends State<MissionScreen> {
     showDialog(context: context, builder: (context) => AlertDialog(backgroundColor: const Color(0xFF1A1A1A), title: const Text("Sıfırla?", style: TextStyle(color: Colors.white)), content: const Text("Tüm ilerleme silinecek. Emin misin?", style: TextStyle(color: Colors.white70)), actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text("İPTAL")), TextButton(onPressed: () { Navigator.pop(context); _resetData(); }, child: const Text("SIFIRLA", style: TextStyle(color: Colors.red)))]));
   }
 
-  // YAZILARI BÜYÜTMEK İÇİN YARDIMCI FONKSİYON
   String _capitalize(String text) {
     if (text.isEmpty) return text;
     return text.split(' ').map((word) {
@@ -188,6 +204,7 @@ class _MissionScreenState extends State<MissionScreen> {
     if (mission.isLocked) return _buildLockedCard(mission, isDark, "Çok Yakında...");
     if (!isEnabled) return _buildLockedCard(mission, isDark, "Önceki Seferi Tamamla!");
     int completed = _missionStages[mission.name] ?? 0;
+    
     return Card(
       color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -195,7 +212,44 @@ class _MissionScreenState extends State<MissionScreen> {
         leading: Image.asset(mission.imagePath, width: 60),
         title: Text(mission.name, style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.bold, fontSize: 18)),
         subtitle: Text("Tamamlanan Aşama: $completed / ${mission.stages.length}", style: const TextStyle(fontSize: 12)),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // HIZLI TAMAMLAMA BUTONU (CHECK)
+            if (completed < mission.stages.length)
+              IconButton(
+                icon: const Icon(Icons.check_box_outlined, color: Colors.greenAccent, size: 22),
+                onPressed: () => _showQuickCompleteDialog(mission),
+                tooltip: "Bu seferi otomatik tamamla",
+              ),
+            IconButton(
+              icon: const Icon(Icons.share, size: 20, color: Colors.greenAccent),
+              onPressed: () => _shareSingleMissionProgress(mission),
+            ),
+          ],
+        ),
         children: mission.stages.map((stage) => _buildStageTile(mission, stage, isDark)).toList(),
+      ),
+    );
+  }
+
+  void _showQuickCompleteDialog(Mission mission) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A1A),
+        title: Text("${mission.name} Tamamlansın mı?", style: const TextStyle(color: Colors.white)),
+        content: const Text("Bu seferin tüm aşamaları otomatik olarak bitirilecek. Emin misin?", style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("İPTAL")),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _quickCompleteMission(mission);
+            },
+            child: const Text("EVET, TAMAMLA", style: TextStyle(color: Colors.greenAccent)),
+          ),
+        ],
       ),
     );
   }
@@ -243,7 +297,6 @@ class _MissionScreenState extends State<MissionScreen> {
         children: [
           SizedBox(width: 30, height: 30, child: Image.asset(iconPath, errorBuilder: (c, e, s) => const Icon(Icons.help))),
           const SizedBox(width: 12),
-          // BURASI: İSİMLER ARTIK BÜYÜK HARFLE BAŞLIYOR
           Expanded(child: Text(_capitalize(displayName), style: TextStyle(color: isActive ? (isDark ? Colors.white70 : Colors.black87) : Colors.grey, fontSize: 13))),
           Row(
             children: [
@@ -259,5 +312,31 @@ class _MissionScreenState extends State<MissionScreen> {
 
   Widget _buildBtn(IconData i, VoidCallback? t, bool a, bool d, {void Function(LongPressStartDetails)? onLong, void Function(LongPressEndDetails)? onEnd}) {
     return GestureDetector(onTap: t, onLongPressStart: onLong, onLongPressEnd: onEnd, child: Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: a ? (d ? Colors.white10 : Colors.green.withOpacity(0.1)) : Colors.black26, borderRadius: BorderRadius.circular(5)), child: Icon(i, color: a ? (d ? Colors.white : Colors.green) : Colors.grey, size: 16)));
+  }
+
+  void _shareSingleMissionProgress(Mission mission) {
+    final List<String> lines = ["ARC Raider Tracker - ${mission.name} İhtiyaç Listem (${widget.userName}):\n"];
+    int completedStages = _missionStages[mission.name] ?? 0;
+    MissionStage? activeStage;
+    try { activeStage = mission.stages.firstWhere((s) => s.stageNumber == completedStages + 1); } catch (e) { activeStage = null; }
+    if (activeStage != null) {
+      List<String> neededReqs = [];
+      for (var req in activeStage.requirements) {
+        final key = "${mission.name}_${activeStage.name}_${req.id}";
+        int current = _missionProgress[key] ?? 0;
+        if (current < req.requiredAmount) {
+          if (req.type == RequirementType.item) {
+            final gameItem = ItemLibrary.resourceItems.firstWhere((item) => item.id == req.id, orElse: () => GameItem(id: "", nameTr: req.id, fileName: ""));
+            neededReqs.add("  - ${gameItem.nameTr}: $current/${req.requiredAmount}");
+          } else {
+            String curStr = current.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
+            String reqStr = req.requiredAmount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
+            neededReqs.add("  - ${req.displayName ?? req.id}: $curStr/$reqStr");
+          }
+        }
+      }
+      if (neededReqs.isNotEmpty) { lines.add("* ${activeStage.stageNumber}. ${activeStage.name} için eksikler:"); lines.addAll(neededReqs); }
+    } else { lines.add("Tebrikler! ${mission.name} projesini tamamen bitirdin! 🏆"); }
+    Share.share(lines.join("\n"), subject: "${mission.name} İhtiyaç Listesi");
   }
 }

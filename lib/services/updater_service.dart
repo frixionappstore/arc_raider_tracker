@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart'; // PAKET ARTIK MEVCUT
 
 class UpdaterService {
-  // SENİN GITHUB REPO BİLGİLERİN
   static const String _repoUrl = "https://raw.githubusercontent.com/frixionappstore/arc_raiders_tracker/main/version.json";
-  
-  // MEVCUT VERSİYON (Bunu her güncellemede artırmalıyız)
+  static const String _downloadUrl = "https://github.com/frixionappstore/arc_raiders_tracker/releases/latest";
+
+  // MEVCUT VERSİYON
   static const double currentVersion = 1.05;
 
   static Future<void> checkForUpdates(BuildContext context) async {
@@ -55,7 +56,7 @@ class UpdaterService {
             const Text("Neler Yeni:", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
             Text(notes, style: const TextStyle(color: Colors.white70, fontSize: 12)),
             const SizedBox(height: 20),
-            const Text("Güncellemek için lütfen GitHub'dan en son APK'yı indirin.", style: TextStyle(color: Colors.white54, fontSize: 11)),
+            const Text("Speranza için yeni mühimmat geldi. Şimdi indirmek ister misin?", style: TextStyle(color: Colors.white54, fontSize: 11)),
           ],
         ),
         actions: [
@@ -64,11 +65,12 @@ class UpdaterService {
             child: const Text("DAHA SONRA", style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Lütfen GitHub Releases sayfasından en son sürümü indirin.")),
-              );
+            onPressed: () async {
+              final Uri url = Uri.parse(_downloadUrl);
+              if (await canLaunchUrl(url)) {
+                await launchUrl(url, mode: LaunchMode.externalApplication);
+              }
+              if (context.mounted) Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent, foregroundColor: Colors.black),
             child: const Text("ŞİMDİ İNDİR"),
