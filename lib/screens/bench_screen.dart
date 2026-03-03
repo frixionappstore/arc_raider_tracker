@@ -54,13 +54,27 @@ class _BenchScreenState extends State<BenchScreen> {
     _saveData();
   }
 
-  void _completeLevel(String benchId, int level) {
+  void _completeLevel(String benchId, BenchLevel level) {
     setState(() {
-      _benchLevels[benchId] = level;
+      // 1. BU TEZGAH İÇİN SEVİYEYİ GÜNCELLE
+      _benchLevels[benchId] = level.level;
+
+      // 2. KESİN TEMİZLİK: Bu seviyede kullanılan tüm malzemeleri bu TEZGAH ÖZELİNDE sıfırla
+      for (var req in level.materials) {
+        final key = "${benchId}_${req.itemId}";
+        _benchStocks[key] = 0; 
+      }
     });
+    
+    // 3. ANINDA KAYDET
     _saveData();
+    
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Tebrikler! Seviye $level tamamlandı.")),
+      SnackBar(
+        backgroundColor: Colors.orangeAccent,
+        content: Text("SEVİYE v${level.level} TAMAMLANDI! Malzemeler harcandı.", 
+          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+      ),
     );
   }
 
@@ -110,11 +124,6 @@ class _BenchScreenState extends State<BenchScreen> {
   }
 
   Widget _buildLevelItem(Bench bench, BenchLevel level, int currentLevel, bool isDark) {
-    // BU SEVİYE DURUMU: 
-    // 1. Tamamlanmış (Geçmiş)
-    // 2. Aktif (Şu anki hedef)
-    // 3. Kilitli (Gelecek)
-    
     bool isCompleted = level.level <= currentLevel;
     bool isActive = level.level == currentLevel + 1;
     bool isLocked = level.level > currentLevel + 1;
@@ -170,7 +179,9 @@ class _BenchScreenState extends State<BenchScreen> {
                     children: [
                       _buildMiniBtn(Icons.remove, isActive ? () => _updateStock(bench.id, req.itemId, -1, req.quantity) : null, isDark, active: isActive),
                       const SizedBox(width: 8),
-                      Text("$current / ${req.quantity}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: isActive ? (current >= req.quantity ? Colors.greenAccent : (isDark ? Colors.white70 : Colors.black87)) : Colors.grey)),
+                      // BURASI KRİTİK: Tamamlanmış seviyelerde artık 0/X değil, sadece X/X veya temiz 0 görünecek şekilde güncelledim
+                      Text(isCompleted ? "${req.quantity} / ${req.quantity}" : "$current / ${req.quantity}", 
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: isCompleted ? Colors.greenAccent : (isActive && current >= req.quantity ? Colors.greenAccent : Colors.grey))),
                       const SizedBox(width: 8),
                       _buildMiniBtn(Icons.add, isActive ? () => _updateStock(bench.id, req.itemId, 1, req.quantity) : null, isDark, color: Colors.greenAccent, active: isActive),
                     ],
@@ -185,7 +196,7 @@ class _BenchScreenState extends State<BenchScreen> {
               width: double.infinity,
               height: 35,
               child: ElevatedButton(
-                onPressed: allMet ? () => _completeLevel(bench.id, level.level) : null,
+                onPressed: allMet ? () => _completeLevel(bench.id, level) : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: allMet ? Colors.green : Colors.white10,
                   foregroundColor: allMet ? Colors.white : Colors.grey,
